@@ -1,0 +1,117 @@
+name: docker build and push
+
+on:
+  workflow_call:
+    inputs:
+      history_depth:
+        description: "0 means fetch the full history"
+        required: false
+        default: 0
+        type: number
+      tags:
+        type: string
+        description: tag to give to the built image
+        required: true
+      push:
+        type: boolean
+        description: push image to registry
+        required: false
+        default: ${{ github.event_name == 'push' && github.ref_name == github.event.repository.default_branch }}
+      no_cache:
+        type: boolean
+        description: disable cache
+        required: false
+        default: false
+      cache_from_tag:
+        type: string
+        description: tag of the image to use as base cache
+        required: false
+        default: "latest"
+      context:
+        type: string
+        description: context to use on the build
+        required: false
+        default: "."
+      dockerfile:
+        type: string
+        description: dockerfile to use to built the image
+        required: false
+        default: "Dockerfile"
+      build_platforms:
+        type: string
+        description: which image architecture should be built
+        required: false
+        default: linux/amd64,linux/arm64
+      target:
+        type: string
+        description: "sets the target stage to build"
+        required: false
+        default: ""
+      driver_opts:
+        type: string
+        description: "list of additional driver-specific options. (eg. image=moby/buildkit:master)"
+        required: false
+      provenance:
+        type: boolean
+        description: "generate provenance attestation for the build"
+        required: false
+        default: false
+      load:
+        type: boolean
+        description: load docker image (output=docker)
+        required: false
+        default: false
+      build_args:
+        description: 'build arguments (format: "key=value")'
+        required: false
+        type: string
+        default: ""
+      build_repo_secrets:
+        description: 'list of secrets to expose to the build (format: "key=value", e.g. git_auth_token=mytoken)'
+        required: false
+        type: string
+        default: ""
+      qemu:
+        description: "enable or disable qemu for multi-architecture emulation"
+        type: boolean
+        default: true
+        required: false
+
+jobs:
+  docker-build-push:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch) || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: ${{ inputs.history_depth }}
+      - name: set up qemu
+        if: ${{ inputs.qemu == true }}
+        uses: docker/setup-qemu-action@v3
+      - name: set up docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          buildkitd-flags: "--allow-insecure-entitlement security.insecure --allow-insecure-entitlement network.host"
+      - name: log into registry ghcr
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: docker build and push
+        id: build-and-push
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ inputs.context }}
+          push: ${{ inputs.push }}
+          platforms: ${{ inputs.build_platforms }}
+          tags: ${{ inputs.tags }}
+          target: ${{ inputs.target }}
+          file: ${{ inputs.dockerfile }}
+          cache-from: type=registry,ref=${{ inputs.tags }}:${{ inputs.cache_from_tag }}
+          no-cache: ${{ inputs.no_cache }}
+          provenance: ${{ inputs.provenance }}
+          load: ${{ inputs.load }}
+          build-args: ${{ inputs.build_args }}
+          secrets: ${{ inputs.build_repo_secrets != '' && inputs.build_repo_secrets || '' }}
