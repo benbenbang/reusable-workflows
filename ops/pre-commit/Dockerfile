@@ -46,7 +46,7 @@ SHELL [ "/bin/bash", "-c", "-o", "pipefail" ]
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends git curl ca-certificates gnupg sudo \
-    unzip wget openssl iproute2 coreutils wireguard-tools && \
+    unzip wget openssl iproute2 coreutils wireguard-tools build-essential && \
     # ---- install nodejs ---- #
     curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - && \
     apt-get install -y --no-install-recommends nodejs && \
