@@ -30,9 +30,9 @@ function build_images(){
         --build-arg PULUMI_VERSION=${PULUMI_VERSION} \
         -t ghcr.io/benbenbang/pre-commit:latest \
         -t ghcr.io/benbenbang/r-workflows/pre-commit:latest \
-        -t ghcr.io/benbenbang/ruseable-workflows/pre-commit:latest \
+        -t ghcr.io/benbenbang/reusable-workflows/pre-commit:latest \
         -t ghcr.io/benbenbang/r-workflows/prek:latest \
-        -t ghcr.io/benbenbang/ruseable-workflows/prek:latest \
+        -t ghcr.io/benbenbang/reusable-workflows/prek:latest \
         --push \
         -f $_CURRENT_DIR/Dockerfile \
         $_CURRENT_DIR/.
