@@ -6,7 +6,7 @@ _CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 docker buildx build --platform linux/amd64,linux/arm64 \
        --no-cache \
        -t ghcr.io/benbenbang/semantic-release:latest \
-       -t ghcr.io/benbenbang/ruseable-workflows/semantic-release:latest \
+       -t ghcr.io/benbenbang/reusable-workflows/semantic-release:latest \
        --push \
        -f $_CURRENT_DIR/Dockerfile \
        $_CURRENT_DIR/.

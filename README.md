@@ -10,19 +10,19 @@ For example:
 ```yaml
 jobs:
   pre-commit:
-    uses: benbenbang/ruseable-workflows/.github/workflows/pre-commit.yml@main
+    uses: benbenbang/reusable-workflows/.github/workflows/pre-commit.yml@main
     secrets: inherit
 
   semantic-release:
-    uses: benbenbang/ruseable-workflows/.github/workflows/semantic-release.yml@main
+    uses: benbenbang/reusable-workflows/.github/workflows/semantic-release.yml@main
     secrets: inherit
 
   pypi-publish:
-    uses: benbenbang/ruseable-workflows/.github/workflows/pypi-publish.yml@main
+    uses: benbenbang/reusable-workflows/.github/workflows/pypi-publish.yml@main
     secrets: inherit
 
   docker-build-push:
-    uses: benbenbang/ruseable-workflows/.github/workflows/docker-build-push.yml@main
+    uses: benbenbang/reusable-workflows/.github/workflows/docker-build-push.yml@main
     secrets: inherit
     with:
       tags: ghcr.io/owner/repo:latest
