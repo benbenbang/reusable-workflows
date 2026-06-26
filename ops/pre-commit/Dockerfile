@@ -30,6 +30,9 @@ ENV PREK_VERSION=${PREK_VERSION}
 ARG PULUMI_VERSION=3.198.0
 ENV PULUMI_VERSION=${PULUMI_VERSION}
 
+ARG RUST_VERSION=stable
+ENV RUST_VERSION=${RUST_VERSION}
+
 WORKDIR /workspace
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -38,7 +41,9 @@ ENV TERM=linux
 COPY --from=go /usr/local/go/ /usr/local/go/
 
 ENV GOBIN="/usr/local/go/bin"
-ENV CARGO_ROOT="/root/.cargo/bin"
+ENV CARGO_HOME="/usr/local/cargo"
+ENV RUSTUP_HOME="/usr/local/rustup"
+ENV CARGO_ROOT="${CARGO_HOME}/bin"
 ENV PULUMI_BIN="/root/.pulumi/bin"
 ENV PATH="/root/.local/bin:${CARGO_ROOT}:${GOBIN}:${PULUMI_BIN}:${PATH}"
 
@@ -64,7 +69,9 @@ RUN apt-get update && \
     # ---- install typescript ---- #
     npm install -g typescript@ && \
     # ---- install rust ---- #
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
+        --no-modify-path --default-toolchain ${RUST_VERSION} -c rustfmt -c clippy && \
+    chmod -R a+rwX "${CARGO_HOME}" "${RUSTUP_HOME}" && \
     # ---- install hadolint ---- #
     if [ "$(uname -m)" = "x86_64" ]; then export PLATFORM="x86_64"; elif [ "$(uname -m)" = "aarch64" ] || [ "$(uname -m)" = "arm64" ]; then export PLATFORM="arm64"; else echo "Unsupported architecture"; exit 1; fi && \
     curl -sSL https://github.com/hadolint/hadolint/releases/download/${HADOLINT_VERSION}/hadolint-Linux-${PLATFORM} --output /usr/local/bin/hadolint && \

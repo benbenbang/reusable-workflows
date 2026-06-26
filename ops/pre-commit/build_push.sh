@@ -1,4 +1,4 @@
-#! /bin/env bash
+#!/usr/bin/env bash
 
 _CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
@@ -14,6 +14,7 @@ function build_images(){
     NODE_VERSION=${NODE_VERSION:-26}
     PREK_VERSION=${PREK_VERSION:-0.4.5}
     PULUMI_VERSION=${PULUMI_VERSION:-3.3247.0}
+    RUST_VERSION=${RUST_VERSION:-1.96.0}
 
     docker buildx build --platform linux/amd64,linux/arm64 \
         --no-cache \
@@ -25,6 +26,7 @@ function build_images(){
         --build-arg UV_VERSION=${UV_VERSION} \
         --build-arg PRE_COMMIT_VERSION=${PRE_COMMIT_VERSION} \
         --build-arg HELM_DOCS_VERSION=${HELM_DOCS_VERSION} \
+        --build-arg RUST_VERSION=${RUST_VERSION} \
         --build-arg NODE_VERSION=${NODE_VERSION} \
         --build-arg PREK_VERSION=${PREK_VERSION} \
         --build-arg PULUMI_VERSION=${PULUMI_VERSION} \
