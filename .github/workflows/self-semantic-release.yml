@@ -1,0 +1,27 @@
+name: self-release
+
+permissions:
+  packages: read
+  contents: write
+  issues: write
+  pull-requests: write
+  statuses: write
+
+on:
+  workflow_dispatch:
+    inputs:
+      prompt:
+        description: "If you are sure to launch a new release, put the value to true."
+        default: "false"
+        type: choice
+        options:
+          - "true"
+          - "false"
+
+jobs:
+  semantic-release:
+    if: github.event.inputs.prompt == 'true'
+    uses: benbenbang/ruseable-workflows/.github/workflows/semantic-release.yml@main
+    secrets: inherit
+    with:
+      new_version_title: "♻️ Reusable workflow"
