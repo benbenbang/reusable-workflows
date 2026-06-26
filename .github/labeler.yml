@@ -1,0 +1,27 @@
+triaged:
+  - changed-files:
+      - any-glob-to-any-file: "**/*"
+
+enhancement:
+  - changed-files:
+      - any-glob-to-any-file:
+          - .github/workflows/docker-build-push.yml
+          - .github/workflows/semantic-release.yml
+          - .github/workflows/pre-commit.yml
+
+workflow:
+  - changed-files:
+      - any-glob-to-any-file:
+          - .github/workflows/pull-request.yml
+          - .github/workflows/labeler.yml
+          - scripts/*
+
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - README.md
+
+ops:
+  - changed-files:
+      - any-glob-to-any-file:
+          - ops/*

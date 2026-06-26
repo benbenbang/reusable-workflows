@@ -1,0 +1,91 @@
+name: pre-commit-prek
+
+on:
+  workflow_call:
+    inputs:
+      image_version:
+        description: "prek docker image version"
+        required: false
+        default: "latest"
+        type: string
+      history_depth:
+        description: "0 means fetch the full history"
+        required: false
+        default: 0
+        type: number
+      run_all_files:
+        description: "run all files or specific files"
+        required: false
+        default: "false"
+        type: string
+      check_pr_title:
+        description: "check pr title"
+        required: false
+        default: true
+        type: boolean
+      run_on_merge:
+        description: "run on merge"
+        required: false
+        default: true
+        type: boolean
+
+jobs:
+  prek:
+    name: prek
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    container:
+      image: ghcr.io/benbenbang/ruseable-workflows/pre-commit:${{ inputs.image_version }}
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      RUN_ALL_FILES: ${{ inputs.run_all_files }}
+      CHECK_PR_TITLE: ${{ inputs.check_pr_title }}
+      RUN_ON_MERGE: ${{ inputs.run_on_merge }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: ${{ inputs.history_depth }}
+
+      - name: prepare test environment
+        run: |
+          git config --global --add safe.directory $GITHUB_WORKSPACE
+          prek install && prek install --hook-type commit-msg
+
+          git config --global user.email "${{ github.actor }}@bitbrew.dev"
+          git config --global user.name "${{ github.actor }}"
+
+      - name: cache prek hooks
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/prek
+          key: ${{ runner.os }}-precommit-${{ hashFiles('.prek-config.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-precommit-
+
+      - name: run prek on pull request (changed files)
+        if: ${{ github.ref != 'refs/heads/main' }}
+        shell: bash
+        run: |
+          # run prek on all files or specific files
+          if [[ "${RUN_ALL_FILES}" == "true" ]]; then
+            prek run --all-files
+          else
+            prek run --from-ref origin/main --to-ref HEAD
+          fi
+        env:
+          RUN_ALL_FILES: ${{ inputs.run_all_files }}
+
+      - name: run prek on main branch (all files)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && inputs.run_on_merge
+        run: |
+          prek run --all-files
+
+      - name: check pr title
+        if: ${{ github.ref != 'refs/heads/main' && inputs.check_pr_title }}
+        env:
+          pull_request_title: ${{ github.event.pull_request.title }}
+        run: |
+          echo "checking PR title: '${pull_request_title}'"
+          git commit --allow-empty -m "${pull_request_title}"
