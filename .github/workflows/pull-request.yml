@@ -1,0 +1,56 @@
+name: Pull Request Workflow
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - edited
+      - reopened
+      - synchronize
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  pull-requests: write
+  contents: write
+  issues: write
+  packages: write
+  statuses: write
+
+jobs:
+  pr-labeler:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/labeler@v5
+
+  pre-commit:
+    name: pre-commit
+    uses: ./.github/workflows/pre-commit.yml
+    permissions:
+      packages: read
+      contents: read
+    secrets: inherit
+
+  prek:
+    name: pre-commit
+    uses: ./.github/workflows/prek.yml
+    permissions:
+      packages: read
+      contents: read
+    secrets: inherit
+
+  semantic-release-dry-run:
+    name: semantic-release
+    uses: ./.github/workflows/semantic-release.yml
+    permissions:
+      packages: read
+      contents: write
+      issues: write
+      statuses: write
+    secrets: inherit
+    with:
+      dry_run: true
