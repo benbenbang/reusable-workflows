@@ -1,0 +1,12 @@
+#! /bin/env bash
+
+_CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# build the image on linux/amd64 and linux/arm64
+docker buildx build --platform linux/amd64,linux/arm64 \
+       --no-cache \
+       -t ghcr.io/benbenbang/toolkit:latest \
+       -t ghcr.io/benbenbang/reusable-workflows/toolkit:latest \
+       --push \
+       -f $_CURRENT_DIR/Dockerfile \
+       $_CURRENT_DIR/.
