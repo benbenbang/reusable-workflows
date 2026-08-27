@@ -1,20 +1,18 @@
-#!/usr/bin/env bash
+#! /bin/env bash
 
 _CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 function build_images(){
-    GO_IMAGE_VERSION=${GO_IMAGE_VERSION:-1.25-alpine}
+    GO_IMAGE_VERSION=${GO_IMAGE_VERSION:-1.26-alpine}
     PYTHON_IMAGE_VERSION=${PYTHON_IMAGE_VERSION:-3.13-slim-bookworm}
-    PIPX_VERSION=${PIPX_VERSION:-1.7.1}
+    PIPX_VERSION=${PIPX_VERSION:-1.14.0}
     HADOLINT_VERSION=${HADOLINT_VERSION:-v2.14.0}
-    GH_VERSION=${GH_VERSION:-2.95.0}
-    UV_VERSION=${UV_VERSION:-0.11.24}
+    GH_VERSION=${GH_VERSION:-2.94.0}
+    UV_VERSION=${UV_VERSION:-0.11.20}
     PRE_COMMIT_VERSION=${PRE_COMMIT_VERSION:-4.3.0}
     HELM_DOCS_VERSION=${HELM_DOCS_VERSION:-v1.14.2}
     NODE_VERSION=${NODE_VERSION:-26}
-    PREK_VERSION=${PREK_VERSION:-0.4.5}
-    PULUMI_VERSION=${PULUMI_VERSION:-3.3247.0}
-    RUST_VERSION=${RUST_VERSION:-1.96.0}
+    PREK_VERSION=${PREK_VERSION:-0.4.4}
 
     docker buildx build --platform linux/amd64,linux/arm64 \
         --no-cache \
@@ -26,15 +24,10 @@ function build_images(){
         --build-arg UV_VERSION=${UV_VERSION} \
         --build-arg PRE_COMMIT_VERSION=${PRE_COMMIT_VERSION} \
         --build-arg HELM_DOCS_VERSION=${HELM_DOCS_VERSION} \
-        --build-arg RUST_VERSION=${RUST_VERSION} \
         --build-arg NODE_VERSION=${NODE_VERSION} \
         --build-arg PREK_VERSION=${PREK_VERSION} \
-        --build-arg PULUMI_VERSION=${PULUMI_VERSION} \
         -t ghcr.io/benbenbang/pre-commit:latest \
         -t ghcr.io/benbenbang/r-workflows/pre-commit:latest \
-        -t ghcr.io/benbenbang/reusable-workflows/pre-commit:latest \
-        -t ghcr.io/benbenbang/r-workflows/prek:latest \
-        -t ghcr.io/benbenbang/reusable-workflows/prek:latest \
         --push \
         -f $_CURRENT_DIR/Dockerfile \
         $_CURRENT_DIR/.
