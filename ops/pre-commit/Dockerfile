@@ -6,6 +6,9 @@ FROM python:${PYTHON_IMAGE_VERSION}
 ARG PIPX_VERSION=1.7.1
 ENV PIPX_VERSION=${PIPX_VERSION}
 
+ARG RUFF_VERSION=0.12.11
+ENV RUFF_VERSION=${RUFF_VERSION}
+
 ARG HADOLINT_VERSION=v2.14.0
 ENV HADOLINT_VERSION=${HADOLINT_VERSION}
 
@@ -30,9 +33,6 @@ ENV PREK_VERSION=${PREK_VERSION}
 ARG PULUMI_VERSION=3.198.0
 ENV PULUMI_VERSION=${PULUMI_VERSION}
 
-ARG RUST_VERSION=stable
-ENV RUST_VERSION=${RUST_VERSION}
-
 WORKDIR /workspace
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -41,23 +41,25 @@ ENV TERM=linux
 COPY --from=go /usr/local/go/ /usr/local/go/
 
 ENV GOBIN="/usr/local/go/bin"
-ENV CARGO_HOME="/usr/local/cargo"
+# Pin rustup/cargo to a fixed location so the toolchain is found regardless of the
+# runtime HOME (GitHub Actions sets HOME=/github/home for container jobs, which would
+# otherwise hide the build-time toolchain installed under /root).
 ENV RUSTUP_HOME="/usr/local/rustup"
-ENV CARGO_ROOT="${CARGO_HOME}/bin"
-ENV PULUMI_BIN="/root/.pulumi/bin"
-ENV PATH="/root/.local/bin:${CARGO_ROOT}:${GOBIN}:${PULUMI_BIN}:${PATH}"
+ENV CARGO_HOME="/usr/local/cargo"
+ENV CARGO_ROOT="/usr/local/cargo/bin"
+ENV PATH="/root/.local/bin:${CARGO_ROOT}:${GOBIN}:${PATH}"
 
 SHELL [ "/bin/bash", "-c", "-o", "pipefail" ]
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends git curl ca-certificates gnupg sudo \
-    unzip wget openssl iproute2 coreutils wireguard-tools build-essential && \
+    unzip wget openssl iproute2 coreutils wireguard-tools build-essential pkg-config && \
     # ---- install nodejs ---- #
     curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - && \
     apt-get install -y --no-install-recommends nodejs && \
-    # ---- install pipx and pre-commit ---- #
+    # ---- install pipx, pre-commit, uv and ruff ---- #
     pip install --no-cache-dir --root-user-action ignore pipx && \
-    pipx install pre-commit==${PRE_COMMIT_VERSION} uv==${UV_VERSION} && \
+    pipx install pre-commit==${PRE_COMMIT_VERSION} uv==${UV_VERSION} ruff==${RUFF_VERSION} && \
     # ---- install helm-docs ---- #
     go install github.com/norwoodj/helm-docs/cmd/helm-docs@${HELM_DOCS_VERSION} && \
     # ---- install helm ---- #
@@ -69,14 +71,12 @@ RUN apt-get update && \
     # ---- install typescript ---- #
     npm install -g typescript@ && \
     # ---- install rust ---- #
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
-        --no-modify-path --default-toolchain ${RUST_VERSION} -c rustfmt -c clippy && \
-    chmod -R a+rwX "${CARGO_HOME}" "${RUSTUP_HOME}" && \
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
+    sh -s -- -y --no-modify-path --default-toolchain stable --profile minimal -c rustfmt -c clippy && \
+    chmod -R a+w "${RUSTUP_HOME}" "${CARGO_HOME}" && \
     # ---- install hadolint ---- #
     if [ "$(uname -m)" = "x86_64" ]; then export PLATFORM="x86_64"; elif [ "$(uname -m)" = "aarch64" ] || [ "$(uname -m)" = "arm64" ]; then export PLATFORM="arm64"; else echo "Unsupported architecture"; exit 1; fi && \
     curl -sSL https://github.com/hadolint/hadolint/releases/download/${HADOLINT_VERSION}/hadolint-Linux-${PLATFORM} --output /usr/local/bin/hadolint && \
-    # ---- install pulumi ---- #
-    # curl -fsSL https://get.pulumi.com | sh -s -- --version ${PULUMI_VERSION} && \
     # ---- install github cli ---- #
     # (type -p wget >/dev/null || ( \
     # apt-get update && \
@@ -91,18 +91,13 @@ RUN apt-get update && \
     # tee /etc/apt/sources.list.d/github-cli.list > /dev/null && \
     # apt-get update && \
     # apt-get install gh -y && \
+    # mv /usr/bin/gh /root/.local/bin/ && echo "move gh cli to default path" || echo "gh cli is already in the default path" && \
     # ---- install awscli ---- #
     # if [ "$(uname -m)" = "x86_64" ]; then export PLATFORM="x86_64"; elif [ "$(uname -m)" = "aarch64" ] || [ "$(uname -m)" = "arm64" ]; then export PLATFORM="aarch64"; else echo "Unsupported architecture"; exit 1; fi && \
     # curl "https://awscli.amazonaws.com/awscli-exe-linux-${PLATFORM}.zip" -o "awscliv2.zip" && \
     # unzip awscliv2.zip && \
     # ./aws/install && \
     # rm -rf aws* && \
-    # ---- install vault ---- #
-    # wget https://releases.hashicorp.com/vault/1.15.6/vault_1.15.6_linux_amd64.zip && \
-    # unzip vault_1.15.6_linux_amd64.zip && \
-    # mv vault /usr/local/bin/ && \
-    # chmod +x /usr/local/bin/vault && \
-    # vault version  && \
     # ---- set permissions and cleanup ---- #
     chmod +x /usr/local/bin/hadolint && \
     apt-get autoremove -yqq --purge && \
